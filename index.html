@@ -49,7 +49,7 @@
             border-color: #30363d;
         }
 
-        select, button {
+        select, button, input {
             padding: 5px 16px;
             font-size: 14px;
             line-height: 20px;
@@ -60,7 +60,7 @@
             transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
 
-        .dark-mode select, .dark-mode button {
+        .dark-mode select, .dark-mode button, .dark-mode input {
             background-color: #21262d;
             color: #c9d1d9;
             border-color: #30363d;
@@ -148,6 +148,7 @@
                 <option value="" disabled selected>HPS</option>
                 <option value="custom">Custom</option>
             </select>
+            <input type="number" id="customHashRate" min="1" max="100000" style="display: none;">
             <button id="toggleBtn">Start</button>
             <button id="darkModeBtn">Toggle Dark Mode</button>
         </div>
@@ -164,6 +165,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const hashRateSelect = document.getElementById('hashRate');
+            const customHashRateInput = document.getElementById('customHashRate');
             const toggleBtn = document.getElementById('toggleBtn');
             const codeOutput = document.getElementById('codeOutput');
             const bitcoinAmount = document.getElementById('bitcoinAmount');
@@ -189,6 +191,14 @@
                 option.textContent = i;
                 hashRateSelect.appendChild(option);
             }
+
+            hashRateSelect.addEventListener('change', () => {
+                if (hashRateSelect.value === 'custom') {
+                    customHashRateInput.style.display = 'inline-block';
+                } else {
+                    customHashRateInput.style.display = 'none';
+                }
+            });
 
             function generateHash() {
                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -219,9 +229,17 @@
                 }
             }
                 
-
             toggleBtn.addEventListener('click', () => {
-                const hashRate = parseInt(hashRateSelect.value);
+                let hashRate;
+                if (hashRateSelect.value === 'custom') {
+                    hashRate = parseInt(customHashRateInput.value);
+                    if (isNaN(hashRate) || hashRate < 1 || hashRate > 100000) {
+                        alert('Please enter a valid custom hash rate between 1 and 100000');
+                        return;
+                    }
+                } else {
+                    hashRate = parseInt(hashRateSelect.value);
+                }
                 
                 if (!hashRate) {
                     alert('Please select a hash rate');
