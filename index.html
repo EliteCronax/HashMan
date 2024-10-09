@@ -145,7 +145,8 @@
     <div class="container">
         <div class="header">
             <select id="hashRate">
-                <option value="" disabled selected>Hash generations per second</option>
+                <option value="" disabled selected>HPS</option>
+                <option value="custom">Custom</option>
             </select>
             <button id="toggleBtn">Start</button>
             <button id="darkModeBtn">Toggle Dark Mode</button>
@@ -169,7 +170,6 @@
             const darkModeBtn = document.getElementById('darkModeBtn');
             const cursor = document.querySelector('.cursor');
 
-            // Populate the dropdown with options from 1 to 64
             for (let i = 1; i <= 64; i++) {
                 const option = document.createElement('option');
                 option.value = i;
@@ -204,6 +204,26 @@
                 }
             }
 
+            hashRateSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    let customValue;
+                    do {
+                        customValue = prompt('Enter a custom HPS value (1-100000):');
+                        if (customValue === null) {
+                            hashRateSelect.value = '';
+                            return;
+                        }
+                        customValue = parseInt(customValue);
+                    } while (isNaN(customValue) || customValue < 1 || customValue > 100000);
+                    
+                    const option = document.createElement('option');
+                    option.value = customValue;
+                    option.textContent = customValue;
+                    hashRateSelect.appendChild(option);
+                    hashRateSelect.value = customValue;
+                }
+            });
+
             toggleBtn.addEventListener('click', () => {
                 const hashRate = parseInt(hashRateSelect.value);
                 
@@ -232,7 +252,6 @@
                         hashLine.textContent = hash;
                         codeOutput.appendChild(hashLine);
                         
-                        // Remove the first child if there are more than 25 lines
                         if (codeOutput.childElementCount > 25) {
                             codeOutput.removeChild(codeOutput.firstChild);
                         }
