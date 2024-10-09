@@ -142,7 +142,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+<div class="container">
         <div class="header">
             <select id="hashRate">
                 <option value="" disabled selected>HPS</option>
@@ -210,7 +210,15 @@
             }
 
             let intervalId;
-            let bitcoinIntervalId;
+            let bitcoinCheckIntervalId;
+
+            function checkForBitcoin(hashRate) {
+                // Adjust this formula to balance the game as needed
+                const probability = 1 - Math.pow(0.9999, hashRate);
+                if (Math.random() < probability) {
+                    updateBitcoinAmount();
+                }
+            }
 
             function updateBitcoinAmount() {
                 let amount = parseFloat(bitcoinAmount.textContent);
@@ -248,7 +256,7 @@
 
                 if (intervalId) {
                     clearInterval(intervalId);
-                    clearInterval(bitcoinIntervalId);
+                    clearInterval(bitcoinCheckIntervalId);
                     toggleBtn.textContent = 'Start';
                     toggleBtn.style.backgroundColor = '#2da44e';
                     intervalId = null;
@@ -274,7 +282,7 @@
                         updateCursorPosition();
                     }, 1000 / hashRate);
 
-                    bitcoinIntervalId = setInterval(updateBitcoinAmount, Math.floor(Math.random() * 60000) + 1000);
+                    bitcoinCheckIntervalId = setInterval(() => checkForBitcoin(hashRate), 1000);
                 }
             });
 
