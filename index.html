@@ -80,7 +80,7 @@
         .code-viewer {
             padding: 16px;
             height: 400px;
-            overflow-y: auto;
+            overflow-y: hidden;
             position: relative;
         }
 
@@ -119,7 +119,7 @@
         }
 
         .hash-line {
-            margin-bottom: 8px;
+            white-space: nowrap;
         }
 
         .cursor {
@@ -231,7 +231,12 @@
                         hashLine.className = 'hash-line';
                         hashLine.textContent = hash;
                         codeOutput.appendChild(hashLine);
-                        codeOutput.scrollTop = codeOutput.scrollHeight;
+                        
+                        // Remove the first child if there are more than 25 lines
+                        if (codeOutput.childElementCount > 25) {
+                            codeOutput.removeChild(codeOutput.firstChild);
+                        }
+                        
                         updateCursorPosition();
                     }, 1000 / hashRate);
 
