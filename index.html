@@ -10,9 +10,11 @@
             margin: 0;
             padding: 0;
             background-color: #f6f8fa;
+            display: flex;
         }
 
         .container {
+            flex: 1;
             max-width: 1000px;
             margin: 20px auto;
             background-color: #ffffff;
@@ -50,7 +52,8 @@
 
         .code-viewer {
             padding: 16px;
-            overflow-x: auto;
+            height: 400px;
+            overflow-y: auto;
         }
 
         pre {
@@ -63,6 +66,18 @@
             line-height: 20px;
             color: #1F2328;
         }
+
+        .sidebar {
+            width: 200px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-left: 1px solid #d0d7de;
+        }
+
+        .bitcoin-found {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -71,18 +86,23 @@
             <select id="hashRate">
                 <option value="" disabled selected>Hash generations per second</option>
             </select>
-            <button id="startBtn">Start</button>
+            <button id="toggleBtn">Start</button>
         </div>
         <div class="code-viewer">
             <pre><code id="codeOutput"></code></pre>
         </div>
     </div>
+    <div class="sidebar">
+        <div class="bitcoin-found">Bitcoin found:</div>
+        <div id="bitcoinAmount">0</div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const hashRateSelect = document.getElementById('hashRate');
-            const startBtn = document.getElementById('startBtn');
+            const toggleBtn = document.getElementById('toggleBtn');
             const codeOutput = document.getElementById('codeOutput');
+            const bitcoinAmount = document.getElementById('bitcoinAmount');
 
             // Populate the dropdown with options from 1 to 64
             for (let i = 1; i <= 64; i++) {
@@ -102,8 +122,15 @@
             }
 
             let intervalId;
+            let bitcoinIntervalId;
 
-            startBtn.addEventListener('click', () => {
+            function updateBitcoinAmount() {
+                let amount = parseFloat(bitcoinAmount.textContent);
+                amount += 0.00000001;
+                bitcoinAmount.textContent = amount.toFixed(8);
+            }
+
+            toggleBtn.addEventListener('click', () => {
                 const hashRate = parseInt(hashRateSelect.value);
                 
                 if (!hashRate) {
@@ -113,20 +140,23 @@
 
                 if (intervalId) {
                     clearInterval(intervalId);
+                    clearInterval(bitcoinIntervalId);
+                    toggleBtn.textContent = 'Start';
+                    toggleBtn.style.backgroundColor = '#2da44e';
+                    intervalId = null;
+                } else {
+                    codeOutput.textContent = '';
+                    toggleBtn.textContent = 'Stop';
+                    toggleBtn.style.backgroundColor = '#cf222e';
+
+                    intervalId = setInterval(() => {
+                        const hash = generateHash();
+                        codeOutput.textContent += `${hash}\n`;
+                        codeOutput.scrollTop = codeOutput.scrollHeight;
+                    }, 1000 / hashRate);
+
+                    bitcoinIntervalId = setInterval(updateBitcoinAmount, Math.floor(Math.random() * 60000) + 1000);
                 }
-
-                codeOutput.textContent = '';
-                let count = 0;
-
-                intervalId = setInterval(() => {
-                    const hash = generateHash();
-                    codeOutput.textContent += `${hash}\n`;
-                    count++;
-
-                    if (count >= hashRate) {
-                        clearInterval(intervalId);
-                    }
-                }, 1000 / hashRate);
             });
         });
     </script>
