@@ -11,6 +11,12 @@
             padding: 0;
             background-color: #f6f8fa;
             display: flex;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode {
+            background-color: #0d1117;
+            color: #c9d1d9;
         }
 
         .container {
@@ -20,6 +26,12 @@
             background-color: #ffffff;
             border: 1px solid #d0d7de;
             border-radius: 6px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .dark-mode .container {
+            background-color: #0d1117;
+            border-color: #30363d;
         }
 
         .header {
@@ -29,6 +41,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .dark-mode .header {
+            background-color: #161b22;
+            border-color: #30363d;
         }
 
         select, button {
@@ -37,6 +55,15 @@
             line-height: 20px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
+            background-color: #ffffff;
+            color: #24292f;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .dark-mode select, .dark-mode button {
+            background-color: #21262d;
+            color: #c9d1d9;
+            border-color: #30363d;
         }
 
         button {
@@ -54,6 +81,7 @@
             padding: 16px;
             height: 400px;
             overflow-y: auto;
+            position: relative;
         }
 
         pre {
@@ -63,8 +91,13 @@
         code {
             font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
             font-size: 12px;
-            line-height: 20px;
+            line-height: 1.5;
             color: #1F2328;
+            transition: color 0.3s;
+        }
+
+        .dark-mode code {
+            color: #c9d1d9;
         }
 
         .sidebar {
@@ -72,11 +105,39 @@
             padding: 20px;
             background-color: #ffffff;
             border-left: 1px solid #d0d7de;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .dark-mode .sidebar {
+            background-color: #0d1117;
+            border-color: #30363d;
         }
 
         .bitcoin-found {
             font-weight: bold;
             margin-bottom: 10px;
+        }
+
+        .hash-line {
+            margin-bottom: 8px;
+        }
+
+        .cursor {
+            position: absolute;
+            width: 2px;
+            height: 14px;
+            background-color: #0366d6;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .dark-mode .cursor {
+            background-color: #58a6ff;
         }
     </style>
 </head>
@@ -87,9 +148,11 @@
                 <option value="" disabled selected>Hash generations per second</option>
             </select>
             <button id="toggleBtn">Start</button>
+            <button id="darkModeBtn">Toggle Dark Mode</button>
         </div>
         <div class="code-viewer">
             <pre><code id="codeOutput"></code></pre>
+            <div class="cursor"></div>
         </div>
     </div>
     <div class="sidebar">
@@ -103,6 +166,8 @@
             const toggleBtn = document.getElementById('toggleBtn');
             const codeOutput = document.getElementById('codeOutput');
             const bitcoinAmount = document.getElementById('bitcoinAmount');
+            const darkModeBtn = document.getElementById('darkModeBtn');
+            const cursor = document.querySelector('.cursor');
 
             // Populate the dropdown with options from 1 to 64
             for (let i = 1; i <= 64; i++) {
@@ -130,6 +195,15 @@
                 bitcoinAmount.textContent = amount.toFixed(8);
             }
 
+            function updateCursorPosition() {
+                const lastLine = codeOutput.lastElementChild;
+                if (lastLine) {
+                    const rect = lastLine.getBoundingClientRect();
+                    cursor.style.left = `${rect.right}px`;
+                    cursor.style.top = `${rect.top}px`;
+                }
+            }
+
             toggleBtn.addEventListener('click', () => {
                 const hashRate = parseInt(hashRateSelect.value);
                 
@@ -144,19 +218,29 @@
                     toggleBtn.textContent = 'Start';
                     toggleBtn.style.backgroundColor = '#2da44e';
                     intervalId = null;
+                    cursor.style.display = 'none';
                 } else {
                     codeOutput.textContent = '';
                     toggleBtn.textContent = 'Stop';
                     toggleBtn.style.backgroundColor = '#cf222e';
+                    cursor.style.display = 'block';
 
                     intervalId = setInterval(() => {
                         const hash = generateHash();
-                        codeOutput.textContent += `${hash}\n`;
+                        const hashLine = document.createElement('div');
+                        hashLine.className = 'hash-line';
+                        hashLine.textContent = hash;
+                        codeOutput.appendChild(hashLine);
                         codeOutput.scrollTop = codeOutput.scrollHeight;
+                        updateCursorPosition();
                     }, 1000 / hashRate);
 
                     bitcoinIntervalId = setInterval(updateBitcoinAmount, Math.floor(Math.random() * 60000) + 1000);
                 }
+            });
+
+            darkModeBtn.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
             });
         });
     </script>
