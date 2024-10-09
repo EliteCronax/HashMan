@@ -77,11 +77,18 @@
             background-color: #2c974b;
         }
 
+        .code-viewer-container {
+            display: flex;
+            flex-wrap: wrap;
+            height: 400px;
+            overflow-y: auto;
+        }
+
         .code-viewer {
             padding: 16px;
-            height: 400px;
             overflow-y: hidden;
             position: relative;
+            box-sizing: border-box;
         }
 
         pre {
@@ -139,24 +146,10 @@
         .dark-mode .cursor {
             background-color: #58a6ff;
         }
-
-        .code-viewer-container {
-            display: flex;
-            flex-wrap: wrap;
-            height: 400px;
-            overflow-y: auto;
-        }
-        
-        .code-viewer {
-            padding: 16px;
-            overflow-y: hidden;
-            position: relative;
-            box-sizing: border-box;
-        }
     </style>
 </head>
 <body>
-<div class="container">
+    <div class="container">
         <div class="header">
             <select id="hashRate">
                 <option value="" disabled selected>HPS</option>
@@ -190,6 +183,126 @@
             const multiTaskBtn = document.getElementById('multiTaskBtn');
             const cursor = document.querySelector('.cursor');
             const codeViewerContainer = document.querySelector('.code-viewer-container');
+
+            // Load saved data from localStorage
+            let savedBitcoin = localStorage.getItem('bitcoinAmount');
+            let savedDarkMode = localStorage.getItem('darkMode');
+
+            // Set initial bitcoin amount
+            bitcoinAmount.textContent = savedBitcoin ? savedBitcoin : '0.00000000';
+
+            // Set initial dark mode state
+            if (savedDarkMode === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+
+            // Populate the dropdown with options from 1 to 64
+            for (let i = 1; i <= 64; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                hashRateSelect.appendChild(option);
+            }
+
+            hashRateSelect.addEventListener('change', () => {
+                if (hashRateSelect.value === 'custom') {
+                    customHashRateInput.style.display = 'inline-block';
+                } else {
+                    customHashRateInput.style.display = 'none';
+                }
+            });
+
+            function generateHash() {
+                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                for (let i = 0; i < 128; i++) {
+                    result += characters.charAt(Math.floor(Math.random() * characters.length));
+                }
+                return result;
+            }
+
+            let intervalId;
+            let bitcoinCheckIntervalId;
+
+            function checkForBitcoin(hashRate) {
+                // Adjust this formula to balance the game as needed
+                const probability = 1 - Math.pow(0.9999, hashRate);
+                if (Math.random() < probability) {
+                    updateBitcoinAmount();
+                }
+            }
+
+            function updateBitcoinAmount() {
+                let amount = parseFloat(bitcoinAmount.textContent);
+                amount += 0.00000001;
+                bitcoinAmount.textContent = amount.toFixed(8);
+                // Save updated bitcoin amount to localStorage
+                localStorage.setItem('bitcoinAmount', amount.toFixed(8));
+            }
+
+            function updateCursorPosition() {
+                const lastLine = codeOutput.lastElementChild;
+                if (lastLine) {
+                    const rect = lastLine.getBoundingClientRect();
+                    cursor.style.left = `${rect.right}px`;
+                    cursor.style.top = `${rect.top}px`;
+                }
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                let hashRate;
+                if (hashRateSelect.value === 'custom') {
+                    hashRate = parseInt(customHashRateInput.value);
+                    if (isNaN(hashRate) || hashRate < 1 || hashRate > 100000) {
+                        alert('Please enter a valid custom hash rate between 1 and 100000');
+                        return;
+                    }
+                } else {
+                    hashRate = parseInt(hashRateSelect.value);
+                }
+                
+                if (!hashRate) {
+                    alert('Please select a hash rate');
+                    return;
+                }
+
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    clearInterval(bitcoinCheckIntervalId);
+                    toggleBtn.textContent = 'Start';
+                    toggleBtn.style.backgroundColor = '#2da44e';
+                    intervalId = null;
+                    cursor.style.display = 'none';
+                } else {
+                    codeOutput.textContent = '';
+                    toggleBtn.textContent = 'Stop';
+                    toggleBtn.style.backgroundColor = '#cf222e';
+                    cursor.style.display = 'block';
+
+                    intervalId = setInterval(() => {
+                        const hash = generateHash();
+                        const hashLine = document.createElement('div');
+                        hashLine.className = 'hash-line';
+                        hashLine.textContent = hash;
+                        codeOutput.appendChild(hashLine);
+                        
+                        // Remove the first child if there are more than 25 lines
+                        if (codeOutput.childElementCount > 25) {
+                            codeOutput.removeChild(codeOutput.firstChild);
+                        }
+                        
+                        updateCursorPosition();
+                    }, 1000 / hashRate);
+
+                    bitcoinCheckIntervalId = setInterval(() => checkForBitcoin(hashRate), 1000);
+                }
+            });
+
+            darkModeBtn.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                // Save dark mode state to localStorage
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            });
 
             multiTaskBtn.addEventListener('click', () => {
                 const windowCount = prompt('How many code viewers do you want? (1-32)', '1');
@@ -274,153 +387,6 @@
                     }
                 });
             });
-
-            function updateCursorPosition() {
-                document.querySelectorAll('.code-viewer').forEach(viewer => {
-                    const lastLine = viewer.querySelector('.codeOutput').lastElementChild;
-                    const cursor = viewer.querySelector('.cursor');
-                    if (lastLine) {
-                        const rect = lastLine.getBoundingClientRect();
-                        const viewerRect = viewer.getBoundingClientRect();
-                        cursor.style.left = `${rect.right - viewerRect.left}px`;
-                        cursor.style.top = `${rect.top - viewerRect.top}px`;
-                        // Load saved data from localStorage
-            let savedBitcoin = localStorage.getItem('bitcoinAmount');
-            let savedDarkMode = localStorage.getItem('darkMode');
-
-            // Set initial bitcoin amount
-            bitcoinAmount.textContent = savedBitcoin ? savedBitcoin : '0.00000000';
-
-            // Set initial dark mode state
-            if (savedDarkMode === 'true') {
-                document.body.classList.add('dark-mode');
-            }
-
-            // Populate the dropdown with options from 1 to 64
-            for (let i = 1; i <= 64; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                hashRateSelect.appendChild(option);
-            }
-
-            hashRateSelect.addEventListener('change', () => {
-                if (hashRateSelect.value === 'custom') {
-                    customHashRateInput.style.display = 'inline-block';
-                } else {
-                    customHashRateInput.style.display = 'none';
-                }
-            });
-
-            function generateHash() {
-               const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-                let result = '';
-                for (let i = 0; i < 128; i++) {
-                    result += characters.charAt(Math.floor(Math.random() * characters.length));
-                }
-                return result;
-            }
-
-            let intervalId;
-            let bitcoinCheckIntervalId;
-
-            function checkForBitcoin(hashRate) {
-                // Adjust this formula to balance the game as needed
-                const probability = 1 - Math.pow(0.9999, hashRate);
-                if (Math.random() < probability) {
-                    updateBitcoinAmount();
-                }
-            }
-
-            function updateBitcoinAmount() {
-                let amount = parseFloat(bitcoinAmount.textContent);
-                amount += 0.00000001;
-                bitcoinAmount.textContent = amount.toFixed(8);
-                // Save updated bitcoin amount to localStorage
-                localStorage.setItem('bitcoinAmount', amount.toFixed(8));
-            }
-
-            function updateCursorPosition() {
-                const lastLine = codeOutput.lastElementChild;
-                if (lastLine) {
-                    const rect = lastLine.getBoundingClientRect();
-                    cursor.style.left = `${rect.right}px`;
-                    cursor.style.top = `${rect.top}px`;
-                }
-            }
-                
-            toggleBtn.addEventListener('click', () => {
-                let hashRate;
-                if (hashRateSelect.value === 'custom') {
-                    hashRate = parseInt(customHashRateInput.value);
-                    if (isNaN(hashRate) || hashRate < 1 || hashRate > 100000) {
-                        alert('Please enter a valid custom hash rate between 1 and 100000');
-                        return;
-                    }
-                } else {
-                    hashRate = parseInt(hashRateSelect.value);
-                }
-                
-                if (!hashRate) {
-                    alert('Please select a hash rate');
-                    return;
-                }
-
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    clearInterval(bitcoinCheckIntervalId);
-                    toggleBtn.textContent = 'Start';
-                    toggleBtn.style.backgroundColor = '#2da44e';
-                    intervalId = null;
-                    cursor.style.display = 'none';
-                } else {
-                    codeOutput.textContent = '';
-                    toggleBtn.textContent = 'Stop';
-                    toggleBtn.style.backgroundColor = '#cf222e';
-                    cursor.style.display = 'block';
-
-                    intervalId = setInterval(() => {
-                        const hash = generateHash();
-                        const hashLine = document.createElement('div');
-                        hashLine.className = 'hash-line';
-                        hashLine.textContent = hash;
-                        codeOutput.appendChild(hashLine);
-                        
-                        // Remove the first child if there are more than 25 lines
-                        if (codeOutput.childElementCount > 25) {
-                            codeOutput.removeChild(codeOutput.firstChild);
-                        }
-                        
-                        updateCursorPosition();
-                    }, 1000 / hashRate);
-
-                    bitcoinCheckIntervalId = setInterval(() => checkForBitcoin(hashRate), 1000);
-                }
-            });
-
-            darkModeBtn.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-                // Save dark mode state to localStorage
-                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-            });
-
-            multiTaskBtn.addEventListener('click', () => {
-                const windowCount = prompt('How many windows do you want to open? (1-32)', '1');
-                const count = parseInt(windowCount);
-
-                if (isNaN(count) || count < 1 || count > 32) {
-                    alert('Please enter a valid number between 1 and 32.');
-                    return;
-                }
-
-                for (let i = 0; i < count; i++) {
-                    window.open(window.location.href, '_blank');
-                }
-            });
-        });
-                    }
-                });
-            }
         });
     </script>
 </body>
