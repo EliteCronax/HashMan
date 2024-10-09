@@ -170,6 +170,19 @@
             const darkModeBtn = document.getElementById('darkModeBtn');
             const cursor = document.querySelector('.cursor');
 
+            // Load saved data from localStorage
+            let savedBitcoin = localStorage.getItem('bitcoinAmount');
+            let savedDarkMode = localStorage.getItem('darkMode');
+
+            // Set initial bitcoin amount
+            bitcoinAmount.textContent = savedBitcoin ? savedBitcoin : '0.00000000';
+
+            // Set initial dark mode state
+            if (savedDarkMode === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+
+            // Populate the dropdown with options from 1 to 64
             for (let i = 1; i <= 64; i++) {
                 const option = document.createElement('option');
                 option.value = i;
@@ -178,7 +191,7 @@
             }
 
             function generateHash() {
-                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+               const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                 let result = '';
                 for (let i = 0; i < 128; i++) {
                     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -193,6 +206,8 @@
                 let amount = parseFloat(bitcoinAmount.textContent);
                 amount += 0.00000001;
                 bitcoinAmount.textContent = amount.toFixed(8);
+                // Save updated bitcoin amount to localStorage
+                localStorage.setItem('bitcoinAmount', amount.toFixed(8));
             }
 
             function updateCursorPosition() {
@@ -203,26 +218,7 @@
                     cursor.style.top = `${rect.top}px`;
                 }
             }
-
-            hashRateSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'custom') {
-                    let customValue;
-                    do {
-                        customValue = prompt('Enter a custom HPS value (1-100000):');
-                        if (customValue === null) {
-                            hashRateSelect.value = '';
-                            return;
-                        }
-                        customValue = parseInt(customValue);
-                    } while (isNaN(customValue) || customValue < 1 || customValue > 100000);
-                    
-                    const option = document.createElement('option');
-                    option.value = customValue;
-                    option.textContent = customValue;
-                    hashRateSelect.appendChild(option);
-                    hashRateSelect.value = customValue;
-                }
-            });
+                
 
             toggleBtn.addEventListener('click', () => {
                 const hashRate = parseInt(hashRateSelect.value);
@@ -252,6 +248,7 @@
                         hashLine.textContent = hash;
                         codeOutput.appendChild(hashLine);
                         
+                        // Remove the first child if there are more than 25 lines
                         if (codeOutput.childElementCount > 25) {
                             codeOutput.removeChild(codeOutput.firstChild);
                         }
@@ -265,6 +262,8 @@
 
             darkModeBtn.addEventListener('click', () => {
                 document.body.classList.toggle('dark-mode');
+                // Save dark mode state to localStorage
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
             });
         });
     </script>
