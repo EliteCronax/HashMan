@@ -151,6 +151,7 @@
             <input type="number" id="customHashRate" min="1" max="100000" style="display: none;">
             <button id="toggleBtn">Start</button>
             <button id="darkModeBtn">Toggle Dark Mode</button>
+            <button id="multiTaskBtn">Multi Task</button>
         </div>
         <div class="code-viewer">
             <pre><code id="codeOutput"></code></pre>
@@ -171,6 +172,20 @@
             const bitcoinAmount = document.getElementById('bitcoinAmount');
             const darkModeBtn = document.getElementById('darkModeBtn');
             const cursor = document.querySelector('.cursor');
+            const multiTaskBtn = document.getElementById('multiTaskBtn');
+
+            multiTaskBtn.addEventListener('click', () => {
+                const windowCount = prompt('How many windows do you want to open? (1-32)', '1');
+                const count = parseInt(windowCount);
+
+                if (isNaN(count) || count < 1 || count > 32) {
+                    alert('Please enter a valid number between 1 and 32.');
+                    return;
+                }
+
+                for (let i = 0; i < count; i++) {
+                    window.open(window.location.href, '_blank');
+                }
 
             // Load saved data from localStorage
             let savedBitcoin = localStorage.getItem('bitcoinAmount');
